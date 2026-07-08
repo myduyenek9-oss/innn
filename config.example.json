@@ -1,0 +1,9 @@
+{
+  "webhook": "https://oapi.dingtalk.com/robot/send?access_token=YOUR_TOKEN",
+  "pushTime": "06:30",
+  "userName": "",
+  "birthDate": "2004-01-23",
+  "birthTime": "06:30",
+  "gender": "male",
+  "location": "福建泉州"
+}
