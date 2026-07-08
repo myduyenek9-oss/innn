@@ -45,7 +45,13 @@ export function loadConfig() {
     if (fs.existsSync(cfgFile)) {
       let raw = fs.readFileSync(cfgFile, 'utf8');
       raw = stripBOM(raw);
-      return { ...defaults, ...JSON.parse(raw), ...fromEnv };
+      const fromFile = JSON.parse(raw);
+      return {
+        ...defaults,
+        ...fromEnv,
+        ...fromFile,
+        webhook: fromFile.webhook || fromEnv.webhook || defaults.webhook
+      };
     }
   } catch (e) {
     console.warn('读取配置失败:', e.message);
