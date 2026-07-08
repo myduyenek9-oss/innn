@@ -1,14 +1,16 @@
 import 'dotenv/config';
-import { initBazi } from './bazi/engine.js';
-import { sendDailyPush } from './services/fortune-push.js';
+import { ensureSchema } from './services/db.js';
+import { seedAdminUser } from './services/users.js';
+import { processDuePushes } from './services/fortune-push.js';
 
 async function main() {
-  const ok = initBazi();
-  if (!ok) {
-    throw new Error('八字初始化失败，请检查出生信息配置');
+  await ensureSchema();
+  await seedAdminUser();
+  const results = await processDuePushes(new Date());
+  console.log('Cron checked users:', results.length);
+  for (const result of results) {
+    console.log(result.ok ? 'Push OK' : 'Push failed', result.email, result.error || '');
   }
-  await sendDailyPush(new Date());
-  console.log('Cron push OK');
 }
 
 main().catch(err => {

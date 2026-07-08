@@ -1,14 +1,12 @@
 import https from 'https';
-import { loadConfig } from './config.js';
 
-export async function pushToDingtalk(message) {
-  const config = loadConfig();
-  if (!config.webhook) {
+export async function pushToDingtalk(message, webhook) {
+  if (!webhook) {
     throw new Error('钉钉 webhook 未配置');
   }
 
   const data = JSON.stringify(message);
-  const url = new URL(config.webhook);
+  const url = new URL(webhook);
 
   return new Promise((resolve, reject) => {
     const req = https.request(url, {
@@ -32,7 +30,7 @@ export async function pushToDingtalk(message) {
   });
 }
 
-export async function testDingtalk() {
+export async function testDingtalk(webhook) {
   const msg = {
     msgtype: 'markdown',
     markdown: {
@@ -40,5 +38,5 @@ export async function testDingtalk() {
       text: '# 八字运势推送\n\n✅ 钉钉机器人连接测试成功！\n\n每天会自动推送运势提醒 🌟'
     }
   };
-  return pushToDingtalk(msg);
+  return pushToDingtalk(msg, webhook);
 }

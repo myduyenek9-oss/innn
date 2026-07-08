@@ -6,18 +6,21 @@
 <title>八字运势推送</title>
 <style>
   :root {
-    --bg: #faf8f5;
+    --bg: #f5f7fb;
     --card: #ffffff;
-    --primary: #c0392b;
-    --primary-light: #e74c3c;
-    --text: #2c3e50;
-    --muted: #7f8c8d;
-    --border: #e8e2dc;
-    --soft: #f4eee8;
+    --primary: #2563eb;
+    --primary-light: #1d4ed8;
+    --danger: #c0392b;
+    --text: #172033;
+    --muted: #64748b;
+    --border: #dbe3ef;
+    --soft: #eef3fb;
     --ok-bg: #d5f5e3;
     --ok-text: #1e8449;
     --err-bg: #fadbd8;
     --err-text: #b03a2e;
+    --info-bg: #eef5ff;
+    --info-text: #2f5f94;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -27,11 +30,11 @@
     min-height: 100vh;
     padding: 20px;
   }
-  .container { max-width: 680px; margin: 0 auto; }
+  .container { max-width: 760px; margin: 0 auto; }
   .header {
     text-align: center;
     padding: 28px 18px 20px;
-    background: linear-gradient(135deg, #b83227 0%, #d94b3d 100%);
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #0f766e 100%);
     border-radius: 14px;
     color: white;
     margin-bottom: 18px;
@@ -41,40 +44,26 @@
   .card {
     background: var(--card);
     border-radius: 8px;
-    box-shadow: 0 2px 18px rgba(0,0,0,0.055);
+    border: 1px solid rgba(219, 227, 239, .8);
+    box-shadow: 0 8px 26px rgba(15, 23, 42, 0.06);
     padding: 24px;
     margin-bottom: 18px;
   }
   h2 { font-size: 18px; font-weight: 650; margin-bottom: 16px; color: var(--primary); }
-  .nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
-  .nav button {
-    border-radius: 8px;
-    font-size: 14px;
-    background: var(--soft);
-    color: var(--text);
-  }
-  .nav button.active { background: var(--primary); color: #fff; }
-  .section { display: none; }
-  .section.active { display: block; }
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .form-group { margin-bottom: 16px; }
   label { display: block; font-size: 14px; color: var(--muted); margin-bottom: 6px; }
-  input[type=text], input[type=time], input[type=url], select, textarea {
+  input[type=text], input[type=email], input[type=password], input[type=time], input[type=url], input[type=date], select, textarea {
     width: 100%;
     padding: 10px 12px;
     border: 1.5px solid var(--border);
     border-radius: 8px;
     font-size: 15px;
     outline: none;
-    transition: border .2s;
     background: #fffdfb;
     font-family: inherit;
   }
-  textarea {
-    resize: vertical;
-    min-height: 86px;
-    line-height: 1.6;
-  }
+  textarea { resize: vertical; min-height: 86px; line-height: 1.6; }
   input:focus, select:focus, textarea:focus { border-color: var(--primary); background: #fff; }
   button {
     background: var(--primary);
@@ -85,16 +74,33 @@
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
-    transition: background .2s, opacity .2s;
     width: 100%;
   }
   button:hover { background: var(--primary-light); }
   button:disabled { opacity: .58; cursor: not-allowed; }
   button.secondary { background: #ecf0f1; color: var(--text); }
   button.secondary:hover { background: #dfe6e9; }
+  button.danger { background: var(--danger); }
+  button.danger:hover { background: #a93226; }
   button.test { background: #248f58; }
   button.test:hover { background: #2aa969; }
   .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+  .nav button { background: var(--soft); color: var(--text); }
+  .nav button.active { background: var(--primary); color: #fff; }
+  .section, .app, .auth-panel, .auth-form { display: none; }
+  .section.active, .app.active, .auth-panel.active, .auth-form.active { display: block; }
+  .landing {
+    text-align: center;
+    padding: 30px 18px;
+  }
+  .landing h2 { color: var(--text); font-size: 24px; margin-bottom: 10px; }
+  .landing p { color: var(--muted); line-height: 1.8; margin-bottom: 18px; }
+  .landing-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 18px; }
+  .admin-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+  .admin-table th, .admin-table td { border-bottom: 1px solid var(--border); padding: 8px; text-align: left; }
+  .admin-table button { width: auto; padding: 6px 10px; font-size: 12px; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
   .status {
     padding: 12px 14px;
     border-radius: 8px;
@@ -102,11 +108,22 @@
     margin-top: 12px;
     display: none;
     line-height: 1.6;
+    word-break: break-word;
   }
   .status.ok { display: block; background: var(--ok-bg); color: var(--ok-text); border: 1px solid #a9dfbf; }
   .status.err { display: block; background: var(--err-bg); color: var(--err-text); border: 1px solid #f5b7b1; }
-  .status.info { display: block; background: #eef5ff; color: #2f5f94; border: 1px solid #c9dcf5; }
+  .status.info { display: block; background: var(--info-bg); color: var(--info-text); border: 1px solid #c9dcf5; }
   .tip { font-size: 12px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .topbar button { width: auto; padding: 8px 12px; }
   .bazi-card {
     background: linear-gradient(135deg, #2c3e50, #34495e);
     color: #ecf0f1;
@@ -125,8 +142,6 @@
   .pillar .gz { display: block; font-size: 17px; font-weight: 700; color: #f1c40f; }
   .pillar .nayin { display: block; font-size: 12px; color: #cbd5e1; margin-top: 4px; white-space: nowrap; }
   .bazi-card .map { font-size: 12px; color: #bac8d3; margin-top: 10px; line-height: 1.6; }
-  .info-list { font-size: 14px; line-height: 2; color: var(--text); }
-  .info-list b { color: var(--primary); }
   .chat-panel {
     border: 1px solid var(--border);
     background: #fffdfb;
@@ -136,10 +151,7 @@
     overflow-y: auto;
     margin-bottom: 14px;
   }
-  .message {
-    margin-bottom: 12px;
-    display: flex;
-  }
+  .message { margin-bottom: 12px; display: flex; }
   .message.user { justify-content: flex-end; }
   .bubble {
     max-width: 86%;
@@ -152,19 +164,8 @@
   }
   .message.user .bubble { background: var(--primary); color: #fff; }
   .message.assistant .bubble { background: var(--soft); color: var(--text); }
-  .empty-chat {
-    color: var(--muted);
-    font-size: 14px;
-    text-align: center;
-    padding: 48px 16px;
-    line-height: 1.8;
-  }
-  .agent-meta {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-bottom: 12px;
-  }
+  .empty-chat { color: var(--muted); text-align: center; padding: 48px 16px; line-height: 1.8; }
+  .agent-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
   .meta-item {
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -174,11 +175,12 @@
     color: var(--muted);
   }
   .meta-item strong { display: block; color: var(--text); font-size: 14px; margin-top: 2px; }
-  @media (max-width: 560px) {
+  .info-list { font-size: 14px; line-height: 2; }
+  .info-list b { color: var(--primary); }
+  @media (max-width: 620px) {
     body { padding: 12px; }
     .card { padding: 18px; }
-    .row, .button-row, .agent-meta { grid-template-columns: 1fr; }
-    .nav { grid-template-columns: 1fr; }
+    .row, .button-row, .agent-meta, .nav, .landing-actions { grid-template-columns: 1fr; }
     .pillar-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .bubble { max-width: 94%; }
   }
@@ -188,142 +190,398 @@
 <div class="container">
   <div class="header">
     <h1>八字运势推送</h1>
-    <p>每日运势、行动提醒、钉钉定时推送</p>
+    <p>多人独立命盘、钉钉提醒、运势问答 Agent</p>
   </div>
 
-  <div class="nav">
-    <button class="active" onclick="switchTab('config', this)">配置</button>
-    <button onclick="switchTab('agent', this)">问 Agent</button>
-    <button onclick="switchTab('info', this)">说明</button>
-  </div>
+  <div id="authApp" class="auth-panel">
+    <div id="landingPanel" class="card auth-form active landing">
+      <h2>每天一份专属运势提醒</h2>
+      <p>按个人八字资料生成每日、每周、每月、每年提醒，可配置钉钉推送，也可以在网页里问 Agent。</p>
+      <div class="landing-actions">
+        <button onclick="showAuthPanel('login')">登录</button>
+        <button class="secondary" onclick="showAuthPanel('register')">注册</button>
+        <button class="secondary" onclick="showAuthPanel('reset')">找回密码</button>
+      </div>
+      <div id="emailConfigStatus" class="status"></div>
+    </div>
 
-  <div id="config" class="section active">
-    <div class="card">
-      <h2>基本信息</h2>
+    <div id="loginPanel" class="card auth-form">
+      <h2>登录</h2>
       <div class="row">
         <div class="form-group">
-          <label>姓名</label>
-          <input type="text" id="userName" placeholder="输入姓名">
+          <label>邮箱</label>
+          <input type="email" id="loginEmail" value="admin@example.com">
         </div>
         <div class="form-group">
-          <label>性别</label>
-          <select id="gender">
-            <option value="male">男</option>
-            <option value="female">女</option>
-          </select>
+          <label>密码</label>
+          <input type="password" id="loginPassword" value="admin123456">
         </div>
       </div>
+      <button onclick="login()">登录</button>
+      <button class="secondary" style="margin-top:10px" onclick="showAuthPanel('landing')">返回首页</button>
+      <div id="loginStatus" class="status"></div>
+    </div>
+
+    <div id="registerPanel" class="card auth-form">
+      <h2>注册</h2>
       <div class="row">
         <div class="form-group">
-          <label>出生日期（农历）</label>
-          <input type="text" id="birthDate" placeholder="YYYY-MM-DD" value="2004-01-23">
-          <div class="tip">当前按农历 2004 年 1 月 23 日计算。</div>
+          <label>邮箱</label>
+          <input type="email" id="registerEmail" placeholder="name@example.com">
         </div>
         <div class="form-group">
-          <label>出生时间</label>
-          <input type="time" id="birthTime" value="06:30">
+          <label>昵称</label>
+          <input type="text" id="registerName" placeholder="输入昵称">
         </div>
       </div>
       <div class="form-group">
-        <label>出生地点</label>
-        <input type="text" id="location" placeholder="城市，如：福建泉州" value="福建泉州">
+        <label>密码</label>
+        <input type="password" id="registerPassword" placeholder="至少 8 位">
       </div>
-      <div id="baziDisplay" class="bazi-card" style="display:none">
-        <div style="font-size:12px;color:#95a5a6;margin-bottom:8px">您的八字</div>
+      <button onclick="register()">注册并发送验证码</button>
+      <div class="row" style="margin-top:16px">
+        <div class="form-group">
+          <label>邮箱验证码</label>
+          <input type="text" id="verificationCode" maxlength="6" inputmode="numeric" placeholder="输入 6 位验证码">
+        </div>
+        <div class="form-group">
+          <label>验证邮箱</label>
+          <button onclick="verifyEmailCode()" class="secondary">验证邮箱</button>
+        </div>
+      </div>
+      <div id="registerStatus" class="status"></div>
+      <button class="secondary" style="margin-top:10px" onclick="showAuthPanel('landing')">返回首页</button>
+    </div>
+
+    <div id="resetPanel" class="card auth-form">
+      <h2>找回密码</h2>
+      <div class="form-group">
+        <label>邮箱</label>
+        <input type="email" id="resetEmail" placeholder="name@example.com">
+      </div>
+      <button onclick="requestPasswordReset()">发送找回验证码</button>
+      <div class="row" style="margin-top:16px">
+        <div class="form-group">
+          <label>验证码</label>
+          <input type="text" id="resetCode" maxlength="6" inputmode="numeric" placeholder="输入 6 位验证码">
+        </div>
+        <div class="form-group">
+          <label>新密码</label>
+          <input type="password" id="resetPassword" placeholder="至少 8 位">
+        </div>
+      </div>
+      <button onclick="resetPassword()">重置密码</button>
+      <button class="secondary" style="margin-top:10px" onclick="showAuthPanel('landing')">返回首页</button>
+      <div id="resetStatus" class="status"></div>
+    </div>
+  </div>
+
+  <div id="mainApp" class="app">
+    <div class="topbar">
+      <div id="userInfo">-</div>
+      <button class="secondary" onclick="logout()">退出登录</button>
+    </div>
+
+    <div class="nav">
+      <button class="active" onclick="switchTab('profile', this)">个人资料</button>
+      <button onclick="switchTab('push', this)">钉钉推送</button>
+      <button onclick="switchTab('agent', this)">问 Agent</button>
+      <button onclick="switchTab('info', this)">说明</button>
+      <button id="adminNavBtn" style="display:none" onclick="switchTab('admin', this)">管理员</button>
+    </div>
+
+    <div id="profile" class="section active">
+      <div class="card">
+        <h2>个人资料</h2>
+        <div class="row">
+          <div class="form-group">
+            <label>昵称</label>
+            <input type="text" id="displayName" placeholder="输入昵称">
+          </div>
+          <div class="form-group">
+            <label>性别</label>
+            <select id="gender">
+              <option value="male">男</option>
+              <option value="female">女</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label>日期类型</label>
+            <select id="calendarType">
+              <option value="lunar">农历</option>
+              <option value="solar">公历</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>出生日期</label>
+            <input type="date" id="birthDate" value="2004-01-23">
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label>出生时间（北京时间）</label>
+            <input type="time" id="birthTime" value="06:30">
+          </div>
+          <div class="form-group">
+            <label>排盘规则</label>
+            <select id="baziRule">
+              <option value="beijing_zi_day">北京时间 + 子初换日</option>
+              <option value="true_solar">真太阳时 + 子初换日</option>
+            </select>
+            <div class="tip">23:00 后按次日日柱；真太阳时会用地点经度修正。</div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label>省份</label>
+            <select id="provinceSelect" onchange="onProvinceChange()"></select>
+          </div>
+          <div class="form-group">
+            <label>城市</label>
+            <select id="citySelect" onchange="onCityChange()"></select>
+          </div>
+          <div class="form-group">
+            <label>县区</label>
+            <select id="countySelect"></select>
+            <div class="tip">县级经纬度会保存；选择真太阳时规则时用于修正时间。</div>
+          </div>
+        </div>
+        <button onclick="saveProfile()">保存资料</button>
+        <div id="profileStatus" class="status"></div>
+        <div id="baziDisplay" class="bazi-card" style="display:none">
+        <div style="font-size:12px;color:#95a5a6;margin-bottom:8px">当前账号八字</div>
         <div class="pillar-grid" id="baziPillars"></div>
-        <div class="map">上方为四柱，下方为对应纳音：年柱、月柱、日柱、时柱一一对应。</div>
+        <div id="baziMeta" class="map"></div>
+        <div class="map">每个账号独立计算：年柱、月柱、日柱、时柱与纳音一一对应。</div>
+      </div>
       </div>
     </div>
 
-    <div class="card">
-      <h2>钉钉机器人</h2>
-      <div class="form-group">
-        <label>钉钉 Webhook 地址</label>
-        <input type="url" id="webhook" placeholder="https://oapi.dingtalk.com/robot/send?access_token=...">
-        <div class="tip">如果已经在 Railway Variables 配置，可以留空保存其他信息。</div>
+    <div id="push" class="section">
+      <div class="card">
+        <h2>钉钉推送</h2>
+        <div class="form-group">
+          <label>钉钉 Webhook 地址</label>
+          <input type="url" id="webhook" placeholder="https://oapi.dingtalk.com/robot/send?access_token=...">
+          <div class="tip">Webhook 会加密保存。留空保存时会保留原地址。</div>
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label>推送时间</label>
+            <input type="time" id="pushTime" value="06:30">
+          </div>
+          <div class="form-group">
+            <label>是否启用</label>
+            <select id="pushEnabled">
+              <option value="true">启用</option>
+              <option value="false">不启用</option>
+            </select>
+          </div>
+        </div>
+        <div class="button-row">
+          <button onclick="savePushSettings()">保存推送设置</button>
+          <button onclick="testDingtalk()" class="test">测试钉钉</button>
+        </div>
+        <button onclick="deleteMyWebhook()" class="danger" style="margin-top:10px">删除我的 Webhook</button>
+        <button onclick="pushNow()" style="margin-top:10px">立刻推送我的运势</button>
+        <div class="tip">部署后如果 Railway Cron 每天只跑一次，实际推送按 Cron 固定时间执行；网页时间主要用于记录和本地轮询。</div>
+        <div id="pushStatus" class="status"></div>
       </div>
-      <div class="form-group">
-        <label>推送时间</label>
-        <input type="time" id="pushTime" value="06:30">
-        <div class="tip">部署后自动推送以 Railway Cron 为准。北京时间 06:30 对应 UTC Cron：30 22 * * *。</div>
-      </div>
-      <div class="button-row">
-        <button onclick="testDingtalk()" class="test">测试钉钉连接</button>
-        <button onclick="saveConfig()">保存配置</button>
-      </div>
-      <div id="saveStatus" class="status"></div>
     </div>
 
-    <div class="card">
-      <h2>立刻推送</h2>
-      <button onclick="pushNow()">立刻发送运势到钉钉</button>
-      <div id="pushStatus" class="status"></div>
+    <div id="agent" class="section">
+      <div class="card">
+        <h2>运势问答 Agent</h2>
+        <div class="agent-meta">
+          <div class="meta-item">当前账号<strong id="agentAccount">-</strong></div>
+          <div class="meta-item">AI 状态<strong id="aiState">检查中</strong></div>
+          <div class="meta-item">记录状态<strong id="dbState">检查中</strong></div>
+          <div class="meta-item">今日次数<strong id="usageState">-</strong></div>
+        </div>
+        <div id="agentNotice" class="status info"></div>
+        <div class="tip">Agent 只读取当前登录账号的命盘、运势和最近 10 条聊天记录；不会读取其他用户资料。</div>
+        <div id="chatPanel" class="chat-panel">
+          <div class="empty-chat">可以问今天适合推进什么、这周要避开什么、本月怎么安排节奏等。</div>
+        </div>
+        <div class="form-group">
+          <label>问题</label>
+          <textarea id="agentQuestion" maxlength="800" placeholder="例如：我今天适合主动谈合作吗？这周学习和工作怎么安排？"></textarea>
+        </div>
+        <div class="button-row">
+          <button onclick="sendAgentQuestion()" id="agentSendBtn">发送问题</button>
+          <button onclick="clearAgentHistory()" class="secondary">清空记录</button>
+        </div>
+        <div id="agentStatus" class="status"></div>
+      </div>
     </div>
-  </div>
 
-  <div id="agent" class="section">
-    <div class="card">
-      <h2>运势问答 Agent</h2>
-      <div class="agent-meta">
-        <div class="meta-item">AI 状态<strong id="aiState">检查中</strong></div>
-        <div class="meta-item">记录状态<strong id="dbState">检查中</strong></div>
-        <div class="meta-item">模型<strong id="modelState">-</strong></div>
+    <div id="admin" class="section">
+      <div class="card">
+        <h2>管理员后台</h2>
+        <div class="row">
+          <div class="form-group">
+            <label>测试收件邮箱</label>
+            <input type="email" id="adminTestEmail" placeholder="默认发送到当前管理员邮箱">
+          </div>
+          <div class="form-group">
+            <label>邮件服务</label>
+            <button class="secondary" onclick="testAdminEmail()">发送测试邮件</button>
+          </div>
+        </div>
+        <div class="button-row">
+          <button onclick="loadAdminUsers()">刷新用户列表</button>
+          <button class="secondary" onclick="bulkDeleteAdminUsers()">删除选中账号</button>
+        </div>
+        <button class="secondary" style="margin-top:10px" onclick="clearAdminDetail()">清空详情选择</button>
+        <div id="adminStatus" class="status"></div>
+        <div id="adminUsers"></div>
       </div>
-      <div id="agentNotice" class="status info"></div>
-      <div id="chatPanel" class="chat-panel">
-        <div class="empty-chat">可以问今天适合推进什么、这周要避开什么、本月怎么安排节奏等。</div>
-      </div>
-      <div class="form-group">
-        <label>问题</label>
-        <textarea id="agentQuestion" maxlength="800" placeholder="例如：我今天适合主动谈合作吗？这周学习和工作怎么安排？"></textarea>
-      </div>
-      <div class="button-row">
-        <button onclick="sendAgentQuestion()" id="agentSendBtn">发送问题</button>
-        <button onclick="clearAgentHistory()" class="secondary">清空记录</button>
-      </div>
-      <div id="agentStatus" class="status"></div>
-    </div>
-  </div>
 
-  <div id="info" class="section">
-    <div class="card">
-      <h2>计算口径</h2>
-      <div class="info-list">
-        <div><b>今日</b>：按当天流日干支计算。</div>
-        <div><b>本周</b>：按本周 7 天流日分数平均。</div>
-        <div><b>本月</b>：按当前流月干支计算。</div>
-        <div><b>本年</b>：按当前流年干支计算。</div>
-        <div><b>年度表</b>：展示 12 个流月，不和每日分数强行对齐。</div>
+      <div id="adminDetailCard" class="card" style="display:none">
+        <h2>编辑用户</h2>
+        <div class="row">
+          <div class="form-group">
+            <label>用户邮箱</label>
+            <input type="text" id="adminEmail" disabled>
+          </div>
+          <div class="form-group">
+            <label>角色</label>
+            <select id="adminRole">
+              <option value="user">普通用户</option>
+              <option value="admin">管理员</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label>邮箱验证</label>
+            <select id="adminEmailVerified">
+              <option value="true">已验证</option>
+              <option value="false">未验证</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>账号状态</label>
+            <select id="adminDisabled">
+              <option value="false">启用</option>
+              <option value="true">禁用</option>
+            </select>
+          </div>
+        </div>
+        <button onclick="saveAdminUser()">保存账号状态</button>
+
+        <h2 style="margin-top:22px">资料</h2>
+        <div class="row">
+          <div class="form-group">
+            <label>昵称</label>
+            <input type="text" id="adminDisplayName">
+          </div>
+          <div class="form-group">
+            <label>性别</label>
+            <select id="adminGender">
+              <option value="male">男</option>
+              <option value="female">女</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label>日期类型</label>
+            <select id="adminCalendarType">
+              <option value="lunar">农历</option>
+              <option value="solar">公历</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>出生日期</label>
+            <input type="date" id="adminBirthDate">
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label>出生时间</label>
+            <input type="time" id="adminBirthTime">
+          </div>
+          <div class="form-group">
+            <label>排盘规则</label>
+            <select id="adminBaziRule">
+              <option value="beijing_zi_day">北京时间 + 子初换日</option>
+              <option value="true_solar">真太阳时 + 子初换日</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>县区行政代码</label>
+          <input type="text" id="adminAdcode" placeholder="例如 350503">
+          <div class="tip">管理员后台第一版用行政代码定位县区；普通资料页仍可三级选择。</div>
+        </div>
+        <button onclick="saveAdminProfile()">保存用户资料</button>
+        <div id="adminBaziPreview" class="bazi-card" style="display:none;margin-top:12px">
+          <div class="pillar-grid" id="adminBaziPillars"></div>
+          <div id="adminBaziMeta" class="map"></div>
+        </div>
+
+        <h2 style="margin-top:22px">推送配置</h2>
+        <div class="form-group">
+          <label>替换钉钉 Webhook</label>
+          <input type="url" id="adminWebhook" placeholder="留空则保留原 Webhook">
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label>推送时间</label>
+            <input type="time" id="adminPushTime">
+          </div>
+          <div class="form-group">
+            <label>推送状态</label>
+            <select id="adminPushEnabled">
+              <option value="true">启用</option>
+              <option value="false">不启用</option>
+            </select>
+          </div>
+        </div>
+        <button onclick="saveAdminPushSettings()">保存推送配置</button>
+        <button onclick="clearAdminWebhook()" class="danger" style="margin-top:10px">清空该用户 Webhook</button>
+
+        <h2 style="margin-top:22px">数据</h2>
+        <div class="button-row">
+          <button class="secondary" onclick="clearAdminAgentHistory()">清空该用户 Agent 记录</button>
+          <button class="secondary" onclick="loadAdminDetail(selectedAdminUserId)">刷新详情</button>
+        </div>
+        <button id="adminDeleteUserBtn" style="margin-top:10px;background:#8e1b13" onclick="deleteAdminUser()">删除账号</button>
+        <div id="adminMessages" class="tip"></div>
+        <div id="adminPushLogs" class="tip"></div>
       </div>
     </div>
-    <div class="card">
-      <h2>部署配置</h2>
-      <div class="info-list">
-        <div>Railway Web 服务启动命令：<b>node src/index.js</b></div>
-        <div>Railway Cron 服务执行命令：<b>npm run cron</b></div>
-        <div>北京时间 06:30 的 Cron：<b>30 22 * * *</b></div>
-        <div>Agent 需要变量：<b>AI_API_KEY、AI_MODEL、DATABASE_URL</b></div>
+
+    <div id="info" class="section">
+      <div class="card">
+        <h2>多人隔离规则</h2>
+        <div class="info-list">
+          <div><b>账号隔离</b>：后端从登录 Cookie 判断当前用户，不接受前端传 user_id。</div>
+          <div><b>八字隔离</b>：每次计算都传入当前用户资料，不再使用全局命盘。</div>
+          <div><b>Agent 隔离</b>：聊天记录按 user_id 存取，每人每天 20 次。</div>
+          <div><b>推送隔离</b>：每个人使用自己的加密 webhook 和推送时间。</div>
+          <div><b>Cron</b>：统一轮询到点用户，push_logs 防止当天重复推送。</div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-let webhookConfigured = false;
+let currentUser = null;
 let agentMessages = [];
-
-function switchTab(id, btn) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  if (id === 'agent') loadAgentHistory();
-}
+let pushWebhookConfigured = false;
+let locationTree = [];
+let pendingVerifyEmail = '';
+let selectedAdminUserId = '';
 
 function showStatus(id, type, msg) {
   const el = document.getElementById(id);
   el.className = 'status ' + type;
-  el.textContent = msg;
+  el.textContent = msg || '';
   el.style.display = msg ? 'block' : 'none';
 }
 
@@ -333,61 +591,223 @@ function escapeHtml(str) {
   }[ch]));
 }
 
-async function testDingtalk() {
-  showStatus('saveStatus', 'info', '发送测试消息中...');
+function resetAgentPanel() {
+  agentMessages = [];
+  renderAgentMessages();
+  const account = document.getElementById('agentAccount');
+  if (account) account.textContent = currentUser?.email || '-';
+  const status = document.getElementById('agentStatus');
+  if (status) showStatus('agentStatus', 'info', '');
+}
+
+async function api(url, options = {}) {
+  const r = await fetch(url, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok || data.ok === false) throw new Error(data.msg || '请求失败');
+  return data;
+}
+
+function showAuthPanel(name) {
+  document.querySelectorAll('#authApp .auth-form').forEach(panel => panel.classList.remove('active'));
+  const target = document.getElementById(`${name}Panel`) || document.getElementById('landingPanel');
+  target.classList.add('active');
+  if (name === 'landing') loadEmailStatus();
+}
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (id === 'agent') loadAgentHistory();
+  if (id === 'push') loadPushSettings();
+  if (id === 'admin') loadAdminUsers();
+}
+
+async function loadEmailStatus() {
   try {
-    const r = await fetch('/api/test-dingtalk');
-    const d = await r.json();
-    showStatus('saveStatus', d.ok ? 'ok' : 'err', d.msg);
+    const d = await api('/api/system/email-status');
+    const email = d.email || {};
+    if (email.configured) {
+      showStatus('emailConfigStatus', 'ok', '邮件服务已配置，验证码会发送到邮箱。');
+    } else {
+      showStatus('emailConfigStatus', 'info', '本地测试模式：缺少 ' + (email.missing || []).join(', ') + '，验证码会显示在网页，不会发到 QQ 邮箱。');
+    }
   } catch(e) {
-    showStatus('saveStatus', 'err', '请求失败: ' + e.message);
+    showStatus('emailConfigStatus', 'err', e.message);
   }
 }
 
-async function saveConfig() {
-  const data = {
-    webhook: document.getElementById('webhook').value.trim(),
-    pushTime: document.getElementById('pushTime').value,
-    userName: document.getElementById('userName').value,
-    birthDate: document.getElementById('birthDate').value,
-    birthTime: document.getElementById('birthTime').value,
-    gender: document.getElementById('gender').value,
-    location: document.getElementById('location').value
-  };
-  if (!data.webhook && !webhookConfigured) {
-    alert('请填写 Webhook 地址，或先在 Railway Variables 配置 DINGTALK_WEBHOOK');
+async function refreshAuth() {
+  const d = await api('/api/auth/me');
+  if (!d.authenticated) {
+    currentUser = null;
+    resetAgentPanel();
+    document.getElementById('authApp').classList.add('active');
+    document.getElementById('mainApp').classList.remove('active');
+    showAuthPanel('landing');
     return;
   }
-  if (!data.birthDate) { alert('请填写出生日期'); return; }
-  showStatus('saveStatus', 'info', '保存中...');
-  try {
-    const r = await fetch('/api/config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    const d = await r.json();
-    showStatus('saveStatus', d.ok ? 'ok' : 'err', d.ok ? '保存成功' : d.msg);
-    if (d.ok) await loadConfig();
-  } catch(e) {
-    showStatus('saveStatus', 'err', '请求失败: ' + e.message);
+  const previousUserId = currentUser?.id || '';
+  currentUser = d.user;
+  if (previousUserId !== currentUser.id) resetAgentPanel();
+  document.getElementById('authApp').classList.remove('active');
+  document.getElementById('mainApp').classList.add('active');
+  document.getElementById('userInfo').textContent = `${currentUser.email} · ${currentUser.role === 'admin' ? '管理员' : '用户'}`;
+  document.getElementById('agentAccount').textContent = currentUser.email;
+  document.getElementById('adminNavBtn').style.display = currentUser.role === 'admin' ? 'block' : 'none';
+  await Promise.all([loadProfile(), loadPushSettings(), loadAgentHistory()]);
+}
+
+async function loadLocations() {
+  const d = await api('/api/locations');
+  locationTree = d.locations || [];
+  renderProvinceOptions();
+}
+
+function renderProvinceOptions(selectedCode) {
+  const el = document.getElementById('provinceSelect');
+  el.innerHTML = locationTree.map(p => `<option value="${p.code}">${p.name}</option>`).join('');
+  if (selectedCode) el.value = selectedCode;
+  onProvinceChange();
+}
+
+function onProvinceChange(selectedCityCode, selectedCountyCode) {
+  const province = locationTree.find(p => p.code === document.getElementById('provinceSelect').value) || locationTree[0];
+  const cityEl = document.getElementById('citySelect');
+  cityEl.innerHTML = (province?.cities || []).map(c => `<option value="${c.code}">${c.name}</option>`).join('');
+  if (selectedCityCode) cityEl.value = selectedCityCode;
+  onCityChange(selectedCountyCode);
+}
+
+function onCityChange(selectedCountyCode) {
+  const province = locationTree.find(p => p.code === document.getElementById('provinceSelect').value) || locationTree[0];
+  const city = (province?.cities || []).find(c => c.code === document.getElementById('citySelect').value) || province?.cities?.[0];
+  const countyEl = document.getElementById('countySelect');
+  countyEl.innerHTML = (city?.counties || []).map(c => `<option value="${c.code}">${c.name}</option>`).join('');
+  if (selectedCountyCode) countyEl.value = selectedCountyCode;
+}
+
+function selectLocationByAdcode(adcode) {
+  if (!adcode || !locationTree.length) return;
+  for (const province of locationTree) {
+    for (const city of province.cities || []) {
+      for (const county of city.counties || []) {
+        if (county.code === adcode) {
+          document.getElementById('provinceSelect').value = province.code;
+          onProvinceChange(city.code, county.code);
+          return;
+        }
+      }
+    }
   }
 }
 
-async function pushNow() {
-  showStatus('pushStatus', 'info', '发送中...');
+async function register() {
+  showStatus('registerStatus', 'info', '注册中...');
   try {
-    const r = await fetch('/api/push', { method: 'POST' });
-    const d = await r.json();
-    showStatus('pushStatus', d.ok ? 'ok' : 'err', d.ok ? '发送成功' : d.msg);
+    const email = document.getElementById('registerEmail').value.trim();
+    const d = await api('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email,
+        password: document.getElementById('registerPassword').value,
+        displayName: document.getElementById('registerName').value
+      })
+    });
+    pendingVerifyEmail = email;
+    document.getElementById('verificationCode').value = d.devCode || '';
+    resetAgentPanel();
+    const extra = d.devCode ? `\n本地验证码：${d.devCode}` : '';
+    showStatus('registerStatus', 'ok', d.msg + extra);
   } catch(e) {
-    showStatus('pushStatus', 'err', '请求失败: ' + e.message);
+    showStatus('registerStatus', 'err', e.message);
   }
+}
+
+async function verifyEmailCode() {
+  const email = pendingVerifyEmail || document.getElementById('registerEmail').value.trim();
+  const code = document.getElementById('verificationCode').value.trim();
+  showStatus('registerStatus', 'info', '验证中...');
+  try {
+    const d = await api('/api/auth/verify-code', {
+      method: 'POST',
+      body: JSON.stringify({ email, code })
+    });
+    showStatus('registerStatus', 'ok', d.msg);
+  } catch(e) {
+    showStatus('registerStatus', 'err', e.message);
+  }
+}
+
+async function requestPasswordReset() {
+  const email = document.getElementById('resetEmail').value.trim();
+  showStatus('resetStatus', 'info', '发送中...');
+  try {
+    const d = await api('/api/auth/request-password-reset', {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    });
+    document.getElementById('resetCode').value = d.devCode || '';
+    const extra = d.devCode ? `\n本地验证码：${d.devCode}` : '';
+    showStatus('resetStatus', 'ok', d.msg + extra);
+  } catch(e) {
+    showStatus('resetStatus', 'err', e.message);
+  }
+}
+
+async function resetPassword() {
+  showStatus('resetStatus', 'info', '重置中...');
+  try {
+    const d = await api('/api/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: document.getElementById('resetEmail').value.trim(),
+        code: document.getElementById('resetCode').value.trim(),
+        newPassword: document.getElementById('resetPassword').value
+      })
+    });
+    showStatus('resetStatus', 'ok', d.msg);
+    document.getElementById('loginEmail').value = document.getElementById('resetEmail').value.trim();
+    showAuthPanel('login');
+    showStatus('loginStatus', 'ok', '密码已重置，请用新密码登录');
+  } catch(e) {
+    showStatus('resetStatus', 'err', e.message);
+  }
+}
+
+async function login() {
+  showStatus('loginStatus', 'info', '登录中...');
+  try {
+    await api('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: document.getElementById('loginEmail').value,
+        password: document.getElementById('loginPassword').value
+      })
+    });
+    resetAgentPanel();
+    showStatus('loginStatus', 'ok', '登录成功');
+    await refreshAuth();
+  } catch(e) {
+    showStatus('loginStatus', 'err', e.message);
+  }
+}
+
+async function logout() {
+  await api('/api/auth/logout', { method: 'POST', body: '{}' });
+  currentUser = null;
+  resetAgentPanel();
+  await refreshAuth();
 }
 
 function renderBazi(b) {
-  if (!b) return;
-  document.getElementById('baziDisplay').style.display = 'block';
+  const card = document.getElementById('baziDisplay');
+  if (!b) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
   const pillars = [
     ['年柱', b.yearGZ, b.yearNaYin],
     ['月柱', b.monthGZ, b.monthNaYin],
@@ -395,31 +815,124 @@ function renderBazi(b) {
     ['时柱', b.timeGZ, b.timeNaYin]
   ];
   document.getElementById('baziPillars').innerHTML = pillars.map(([label, gz, nayin]) =>
-    '<div class="pillar"><span class="label">' + label + '</span><span class="gz">' + escapeHtml(gz || '-') + '</span><span class="nayin">' + escapeHtml(nayin || '-') + '</span></div>'
+    `<div class="pillar"><span class="label">${label}</span><span class="gz">${escapeHtml(gz || '-')}</span><span class="nayin">${escapeHtml(nayin || '-')}</span></div>`
   ).join('');
+  const trueSolar = b.trueSolar || {};
+  const calc = b.calculation || {};
+  const meta = document.getElementById('baziMeta');
+  if (meta) {
+    meta.innerHTML = [
+      `主盘规则：${escapeHtml(calc.ruleName || '-')}`,
+      `输入北京时间：${escapeHtml(trueSolar.inputTime || '-')}`,
+      `排盘用日期：${escapeHtml(calc.effectiveDate || '-')}`,
+      `排盘用时间：${escapeHtml(calc.effectiveTime || '-')}`,
+      `北京时间时辰：${escapeHtml(calc.originalHourBranch || '-')}`,
+      `主盘时辰：${escapeHtml(calc.effectiveHourBranch || '-')}`,
+      `真太阳时：${escapeHtml(trueSolar.trueSolarTime || '-')}`,
+      `经度修正：${escapeHtml(trueSolar.longitudeCorrectionMinutes ?? 0)}分钟`,
+      `均时差：${escapeHtml(trueSolar.equationMinutes ?? 0)}分钟`,
+      `总修正：${escapeHtml(trueSolar.correctionMinutes ?? 0)}分钟`,
+      escapeHtml(calc.note || ''),
+      escapeHtml(trueSolar.note || '')
+    ].join('<br>');
+  }
 }
 
-async function loadConfig() {
+async function loadProfile() {
+  const d = await api('/api/profile');
+  const p = d.profile || {};
+  document.getElementById('displayName').value = p.displayName || '';
+  document.getElementById('calendarType').value = p.calendarType || 'lunar';
+  document.getElementById('birthDate').value = p.birthDate || '';
+  document.getElementById('birthTime').value = p.birthTime || '';
+  document.getElementById('baziRule').value = p.baziRule || 'beijing_zi_day';
+  document.getElementById('gender').value = p.gender || 'male';
+  selectLocationByAdcode(p.adcode || '350503');
+  renderBazi(d.bazi);
+}
+
+async function saveProfile() {
+  showStatus('profileStatus', 'info', '保存中...');
   try {
-    const r = await fetch('/api/config');
-    const d = await r.json();
-    webhookConfigured = Boolean(d.webhookConfigured);
-    const webhookInput = document.getElementById('webhook');
-    if (d.webhook && !d.webhook.includes('***')) {
-      webhookInput.value = d.webhook;
-    } else if (webhookConfigured) {
-      webhookInput.value = '';
-      webhookInput.placeholder = '已在 Railway 配置，如需修改请粘贴完整 Webhook';
-    }
-    if (d.pushTime) document.getElementById('pushTime').value = d.pushTime;
-    if (d.userName) document.getElementById('userName').value = d.userName;
-    if (d.birthDate) document.getElementById('birthDate').value = d.birthDate;
-    if (d.birthTime) document.getElementById('birthTime').value = d.birthTime;
-    if (d.gender) document.getElementById('gender').value = d.gender;
-    if (d.location) document.getElementById('location').value = d.location;
+    const d = await api('/api/profile', {
+      method: 'POST',
+      body: JSON.stringify({
+        displayName: document.getElementById('displayName').value,
+        calendarType: document.getElementById('calendarType').value,
+        birthDate: document.getElementById('birthDate').value,
+        birthTime: document.getElementById('birthTime').value,
+        baziRule: document.getElementById('baziRule').value,
+        gender: document.getElementById('gender').value,
+        adcode: document.getElementById('countySelect').value
+      })
+    });
     renderBazi(d.bazi);
+    showStatus('profileStatus', 'ok', '资料已保存');
   } catch(e) {
-    console.error(e);
+    showStatus('profileStatus', 'err', e.message);
+  }
+}
+
+async function loadPushSettings() {
+  const d = await api('/api/push-settings');
+  const s = d.settings || {};
+  pushWebhookConfigured = Boolean(s.webhookConfigured);
+  document.getElementById('pushTime').value = s.pushTime || '06:30';
+  document.getElementById('pushEnabled').value = s.enabled ? 'true' : 'false';
+  const webhookInput = document.getElementById('webhook');
+  webhookInput.value = '';
+  webhookInput.placeholder = pushWebhookConfigured ? '已加密保存，如需修改请粘贴完整 Webhook' : 'https://oapi.dingtalk.com/robot/send?access_token=...';
+}
+
+async function savePushSettings() {
+  showStatus('pushStatus', 'info', '保存中...');
+  try {
+    const d = await api('/api/push-settings', {
+      method: 'POST',
+      body: JSON.stringify({
+        webhook: document.getElementById('webhook').value.trim(),
+        pushTime: document.getElementById('pushTime').value,
+        enabled: document.getElementById('pushEnabled').value === 'true'
+      })
+    });
+    pushWebhookConfigured = d.settings.webhookConfigured;
+    showStatus('pushStatus', 'ok', d.settings.enabled ? '推送设置已启用' : '设置已保存，当前未启用推送');
+    await loadPushSettings();
+  } catch(e) {
+    showStatus('pushStatus', 'err', e.message);
+  }
+}
+
+async function deleteMyWebhook() {
+  if (!confirm('确定删除你的钉钉 Webhook 吗？删除后会自动关闭推送。')) return;
+  showStatus('pushStatus', 'info', '删除中...');
+  try {
+    const d = await api('/api/push-settings/webhook', { method: 'DELETE' });
+    pushWebhookConfigured = Boolean(d.settings?.webhookConfigured);
+    showStatus('pushStatus', 'ok', 'Webhook 已删除，推送已关闭');
+    await loadPushSettings();
+  } catch(e) {
+    showStatus('pushStatus', 'err', e.message);
+  }
+}
+
+async function testDingtalk() {
+  showStatus('pushStatus', 'info', '测试发送中...');
+  try {
+    const d = await api('/api/test-dingtalk', { method: 'POST', body: '{}' });
+    showStatus('pushStatus', 'ok', d.msg);
+  } catch(e) {
+    showStatus('pushStatus', 'err', e.message);
+  }
+}
+
+async function pushNow() {
+  showStatus('pushStatus', 'info', '推送中...');
+  try {
+    await api('/api/push', { method: 'POST', body: '{}' });
+    showStatus('pushStatus', 'ok', '已发送到你的钉钉');
+  } catch(e) {
+    showStatus('pushStatus', 'err', e.message);
   }
 }
 
@@ -430,29 +943,24 @@ function renderAgentMessages() {
     return;
   }
   panel.innerHTML = agentMessages.map(msg =>
-    '<div class="message ' + msg.role + '"><div class="bubble">' + escapeHtml(msg.content) + '</div></div>'
+    `<div class="message ${msg.role}"><div class="bubble">${escapeHtml(msg.content)}</div></div>`
   ).join('');
   panel.scrollTop = panel.scrollHeight;
 }
 
 function updateAgentMeta(data) {
+  document.getElementById('agentAccount').textContent = currentUser?.email || '-';
   document.getElementById('aiState').textContent = data.aiConfigured ? '已配置' : '未配置';
   document.getElementById('dbState').textContent = data.dbConfigured ? '已配置' : '未配置';
-  document.getElementById('modelState').textContent = data.model || '-';
-  const btn = document.getElementById('agentSendBtn');
-  btn.disabled = !data.enabled;
-  if (!data.enabled) {
-    showStatus('agentNotice', 'info', 'Agent 未启用，缺少变量：' + (data.missing || []).join(', '));
-  } else {
-    showStatus('agentNotice', 'info', '');
-  }
+  document.getElementById('usageState').textContent = data.unlimited ? '无限' : `${data.usedToday || 0}/${data.dailyLimit || 10}`;
+  document.getElementById('agentSendBtn').disabled = !data.enabled;
+  if (!data.enabled) showStatus('agentNotice', 'info', 'Agent 未启用，缺少变量：' + (data.missing || []).join(', '));
+  else showStatus('agentNotice', 'info', '');
 }
 
 async function loadAgentHistory() {
   try {
-    const r = await fetch('/api/agent/history');
-    const d = await r.json();
-    if (!d.ok) throw new Error(d.msg);
+    const d = await api('/api/agent/history');
     updateAgentMeta(d);
     agentMessages = d.messages || [];
     renderAgentMessages();
@@ -470,17 +978,12 @@ async function sendAgentQuestion() {
   renderAgentMessages();
   input.value = '';
   try {
-    const r = await fetch('/api/agent/chat', {
+    const d = await api('/api/agent/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question })
     });
-    const d = await r.json();
-    if (!d.ok) {
-      if (d.status) updateAgentMeta(d.status);
-      throw new Error(d.msg);
-    }
     agentMessages.push({ role: 'assistant', content: d.answer });
+    updateAgentMeta({ enabled: true, aiConfigured: true, dbConfigured: true, usedToday: d.usedToday, dailyLimit: d.dailyLimit, unlimited: d.unlimited });
     renderAgentMessages();
     showStatus('agentStatus', 'ok', '已回复');
   } catch(e) {
@@ -491,19 +994,261 @@ async function sendAgentQuestion() {
 async function clearAgentHistory() {
   showStatus('agentStatus', 'info', '清空中...');
   try {
-    const r = await fetch('/api/agent/history', { method: 'DELETE' });
-    const d = await r.json();
-    if (!d.ok) throw new Error(d.msg);
+    await api('/api/agent/history', { method: 'DELETE' });
     agentMessages = [];
     renderAgentMessages();
     showStatus('agentStatus', 'ok', '聊天记录已清空');
+    await loadAgentHistory();
   } catch(e) {
-    showStatus('agentStatus', 'err', '清空失败: ' + e.message);
+    showStatus('agentStatus', 'err', e.message);
   }
 }
 
-loadConfig();
-loadAgentHistory();
+function clearAdminDetail() {
+  selectedAdminUserId = '';
+  document.getElementById('adminDetailCard').style.display = 'none';
+  showStatus('adminStatus', 'info', '');
+}
+
+function renderAdminBazi(b) {
+  const card = document.getElementById('adminBaziPreview');
+  if (!b) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  const pillars = [
+    ['年柱', b.yearGZ, b.yearNaYin],
+    ['月柱', b.monthGZ, b.monthNaYin],
+    ['日柱', b.dayGZ, b.dayNaYin],
+    ['时柱', b.timeGZ, b.timeNaYin]
+  ];
+  document.getElementById('adminBaziPillars').innerHTML = pillars.map(([label, gz, nayin]) =>
+    `<div class="pillar"><span class="label">${label}</span><span class="gz">${escapeHtml(gz || '-')}</span><span class="nayin">${escapeHtml(nayin || '-')}</span></div>`
+  ).join('');
+  const calc = b.calculation || {};
+  document.getElementById('adminBaziMeta').innerHTML = [
+    `主盘规则：${escapeHtml(calc.ruleName || '-')}`,
+    `排盘用时间：${escapeHtml(calc.effectiveDate || '-')} ${escapeHtml(calc.effectiveTime || '-')}`,
+    escapeHtml(calc.note || '')
+  ].join('<br>');
+}
+
+async function loadAdminUsers() {
+  if (!currentUser || currentUser.role !== 'admin') return;
+  showStatus('adminStatus', 'info', '读取用户中...');
+  try {
+    const d = await api('/api/admin/users');
+    const users = d.users || [];
+    document.getElementById('adminUsers').innerHTML = `
+      <table class="admin-table">
+        <thead><tr><th><input type="checkbox" onchange="toggleAllAdminUsers(this)"></th><th>邮箱</th><th>角色</th><th>验证</th><th>状态</th><th>推送</th><th></th></tr></thead>
+        <tbody>
+          ${users.map(u => `
+            <tr>
+              <td><input type="checkbox" class="admin-user-check" value="${u.id}" ${u.id === currentUser.id ? 'disabled' : ''}></td>
+              <td>${escapeHtml(u.email)}<br><span class="tip">${escapeHtml(u.displayName || '')}</span></td>
+              <td>${u.role === 'admin' ? '管理员' : '用户'}</td>
+              <td>${u.emailVerified ? '已验证' : '未验证'}</td>
+              <td>${u.disabled ? '禁用' : '启用'}</td>
+              <td>${u.pushEnabled ? escapeHtml(u.pushTime || '-') : '未启用'}</td>
+              <td><button onclick="loadAdminDetail('${u.id}')">编辑</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>`;
+    showStatus('adminStatus', 'ok', `已读取 ${users.length} 个用户`);
+  } catch(e) {
+    showStatus('adminStatus', 'err', e.message);
+  }
+}
+
+function toggleAllAdminUsers(master) {
+  document.querySelectorAll('.admin-user-check:not(:disabled)').forEach(input => {
+    input.checked = master.checked;
+  });
+}
+
+function getCheckedAdminUserIds() {
+  return Array.from(document.querySelectorAll('.admin-user-check:checked')).map(input => input.value);
+}
+
+async function bulkDeleteAdminUsers() {
+  const ids = getCheckedAdminUserIds();
+  if (!ids.length) {
+    showStatus('adminStatus', 'err', '请先勾选要删除的账号');
+    return;
+  }
+  if (!confirm(`确定删除选中的 ${ids.length} 个账号吗？删除后这些账号需要重新注册，所有资料和记录都会被删除。`)) return;
+  showStatus('adminStatus', 'info', '批量删除中...');
+  try {
+    const d = await api('/api/admin/users/bulk-delete', {
+      method: 'POST',
+      body: JSON.stringify({ ids })
+    });
+    showStatus('adminStatus', 'ok', `已删除 ${d.deleted || 0} 个账号`);
+    clearAdminDetail();
+    await loadAdminUsers();
+  } catch(e) {
+    showStatus('adminStatus', 'err', e.message);
+  }
+}
+
+async function loadAdminDetail(userId) {
+  if (!userId) return;
+  selectedAdminUserId = userId;
+  showStatus('adminStatus', 'info', '读取用户详情...');
+  try {
+    const d = await api(`/api/admin/users/${encodeURIComponent(userId)}`);
+    const u = d.user || {};
+    const p = d.profile || {};
+    const s = d.pushSettings || {};
+    document.getElementById('adminDetailCard').style.display = 'block';
+    document.getElementById('adminEmail').value = u.email || '';
+    document.getElementById('adminRole').value = u.role || 'user';
+    document.getElementById('adminEmailVerified').value = u.emailVerified ? 'true' : 'false';
+    document.getElementById('adminDisabled').value = u.disabled ? 'true' : 'false';
+    document.getElementById('adminDisplayName').value = p.displayName || '';
+    document.getElementById('adminGender').value = p.gender || 'male';
+    document.getElementById('adminCalendarType').value = p.calendarType || 'lunar';
+    document.getElementById('adminBirthDate').value = p.birthDate || '';
+    document.getElementById('adminBirthTime').value = p.birthTime || '';
+    document.getElementById('adminBaziRule').value = p.baziRule || 'beijing_zi_day';
+    document.getElementById('adminAdcode').value = p.adcode || '';
+    document.getElementById('adminPushTime').value = s.pushTime || '06:30';
+    document.getElementById('adminPushEnabled').value = s.enabled ? 'true' : 'false';
+    document.getElementById('adminWebhook').value = '';
+    document.getElementById('adminWebhook').placeholder = s.webhookConfigured ? '已加密保存，如需修改请粘贴完整 Webhook' : '未配置 Webhook';
+    document.getElementById('adminDeleteUserBtn').style.display = userId === currentUser.id ? 'none' : 'block';
+    renderAdminBazi(d.bazi);
+    document.getElementById('adminMessages').innerHTML = `<b>Agent 记录：</b>${(d.messages || []).length} 条最近记录`;
+    document.getElementById('adminPushLogs').innerHTML = `<b>推送日志：</b>${(d.pushLogs || []).map(log => `${escapeHtml(log.pushDate)} ${escapeHtml(log.pushSlot)} ${escapeHtml(log.status)} ${escapeHtml(log.error || '')}`).join('<br>') || '暂无'}`;
+    showStatus('adminStatus', 'ok', '用户详情已读取');
+  } catch(e) {
+    showStatus('adminStatus', 'err', e.message);
+  }
+}
+
+async function testAdminEmail() {
+  showStatus('adminStatus', 'info', '发送测试邮件中...');
+  try {
+    const d = await api('/api/admin/test-email', {
+      method: 'POST',
+      body: JSON.stringify({ email: document.getElementById('adminTestEmail').value.trim() })
+    });
+    showStatus('adminStatus', 'ok', d.msg);
+  } catch(e) {
+    showStatus('adminStatus', 'err', e.message);
+  }
+}
+
+async function saveAdminUser() {
+  if (!selectedAdminUserId) return;
+  showStatus('adminStatus', 'info', '保存账号状态...');
+  try {
+    await api(`/api/admin/users/${encodeURIComponent(selectedAdminUserId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        role: document.getElementById('adminRole').value,
+        emailVerified: document.getElementById('adminEmailVerified').value === 'true',
+        disabled: document.getElementById('adminDisabled').value === 'true'
+      })
+    });
+    showStatus('adminStatus', 'ok', '账号状态已保存');
+    await loadAdminUsers();
+  } catch(e) {
+    showStatus('adminStatus', 'err', e.message);
+  }
+}
+
+async function saveAdminProfile() {
+  if (!selectedAdminUserId) return;
+  showStatus('adminStatus', 'info', '保存用户资料...');
+  try {
+    const d = await api(`/api/admin/users/${encodeURIComponent(selectedAdminUserId)}/profile`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        displayName: document.getElementById('adminDisplayName').value,
+        gender: document.getElementById('adminGender').value,
+        calendarType: document.getElementById('adminCalendarType').value,
+        birthDate: document.getElementById('adminBirthDate').value,
+        birthTime: document.getElementById('adminBirthTime').value,
+        baziRule: document.getElementById('adminBaziRule').value,
+        adcode: document.getElementById('adminAdcode').value
+      })
+    });
+    renderAdminBazi(d.bazi);
+    showStatus('adminStatus', 'ok', '用户资料已保存');
+    await loadAdminUsers();
+  } catch(e) {
+    showStatus('adminStatus', 'err', e.message);
+  }
+}
+
+async function saveAdminPushSettings() {
+  if (!selectedAdminUserId) return;
+  showStatus('adminStatus', 'info', '保存推送配置...');
+  try {
+    await api(`/api/admin/users/${encodeURIComponent(selectedAdminUserId)}/push-settings`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        webhook: document.getElementById('adminWebhook').value.trim(),
+        pushTime: document.getElementById('adminPushTime').value,
+        enabled: document.getElementById('adminPushEnabled').value === 'true'
+      })
+    });
+    showStatus('adminStatus', 'ok', '推送配置已保存');
+    await loadAdminDetail(selectedAdminUserId);
+    await loadAdminUsers();
+  } catch(e) {
+    showStatus('adminStatus', 'err', e.message);
+  }
+}
+
+async function clearAdminWebhook() {
+  if (!selectedAdminUserId) return;
+  if (!confirm('确定清空该用户的钉钉 Webhook 吗？清空后该用户推送会关闭。')) return;
+  showStatus('adminStatus', 'info', '清空 Webhook 中...');
+  try {
+    await api(`/api/admin/users/${encodeURIComponent(selectedAdminUserId)}/push-settings/webhook`, { method: 'DELETE' });
+    showStatus('adminStatus', 'ok', '该用户 Webhook 已清空，推送已关闭');
+    await loadAdminDetail(selectedAdminUserId);
+    await loadAdminUsers();
+  } catch(e) {
+    showStatus('adminStatus', 'err', e.message);
+  }
+}
+
+async function clearAdminAgentHistory() {
+  if (!selectedAdminUserId) return;
+  if (!confirm('确定清空该用户的 Agent 聊天记录吗？')) return;
+  showStatus('adminStatus', 'info', '清空中...');
+  try {
+    await api(`/api/admin/users/${encodeURIComponent(selectedAdminUserId)}/agent-history`, { method: 'DELETE' });
+    showStatus('adminStatus', 'ok', '该用户 Agent 记录已清空');
+    await loadAdminDetail(selectedAdminUserId);
+  } catch(e) {
+    showStatus('adminStatus', 'err', e.message);
+  }
+}
+
+async function deleteAdminUser() {
+  if (!selectedAdminUserId) return;
+  const email = document.getElementById('adminEmail').value || '该用户';
+  if (!confirm(`确定删除 ${email} 吗？删除后该账号需要重新注册，所有资料、推送配置、Agent 记录和推送日志都会被删除。`)) return;
+  showStatus('adminStatus', 'info', '删除中...');
+  try {
+    await api(`/api/admin/users/${encodeURIComponent(selectedAdminUserId)}`, { method: 'DELETE' });
+    showStatus('adminStatus', 'ok', '账号已删除');
+    clearAdminDetail();
+    await loadAdminUsers();
+  } catch(e) {
+    showStatus('adminStatus', 'err', e.message);
+  }
+}
+
+loadLocations().then(refreshAuth).catch(e => {
+  document.getElementById('authApp').classList.add('active');
+  showAuthPanel('landing');
+  showStatus('loginStatus', 'err', e.message);
+});
 </script>
 </body>
 </html>

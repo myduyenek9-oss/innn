@@ -1,11 +1,12 @@
 import { getDayFortune, getWeekFortune, getMonthFortune, getYearFortune } from '../bazi/engine.js';
 import { pushToDingtalk } from './dingtalk.js';
+import { getProfile, getPushSettings, listDuePushUsers, recordPushLog } from './users.js';
 
-export function buildDailyPushMessage(date = new Date()) {
-  const day = getDayFortune(date);
-  const week = getWeekFortune(date);
-  const month = getMonthFortune(date);
-  const year = getYearFortune(date);
+export function buildDailyPushMessage(profile, date = new Date()) {
+  const day = getDayFortune(profile, date);
+  const week = getWeekFortune(profile, date);
+  const month = getMonthFortune(profile, date);
+  const year = getYearFortune(profile, date);
 
   const text = '# 【运势】每日运势提醒\n\n' +
     '**' + day.dateStr + '** - ' + day.lunarStr + '\n\n' +
@@ -28,7 +29,27 @@ export function buildDailyPushMessage(date = new Date()) {
   };
 }
 
-export async function sendDailyPush(date = new Date()) {
-  const message = buildDailyPushMessage(date);
-  await pushToDingtalk(message);
+export async function sendDailyPushForUser(userId, date = new Date()) {
+  const profile = await getProfile(userId);
+  if (!profile.birthDate || !profile.birthTime) throw new Error('出生资料未完整配置');
+  const push = await getPushSettings(userId, { includeSecret: true });
+  if (!push.enabled || !push.webhook) throw new Error('钉钉推送未启用');
+  const message = buildDailyPushMessage(profile, date);
+  await pushToDingtalk(message, push.webhook);
+}
+
+export async function processDuePushes(date = new Date()) {
+  const { users, today } = await listDuePushUsers(date);
+  const results = [];
+  for (const user of users) {
+    try {
+      await sendDailyPushForUser(user.id, date);
+      await recordPushLog(user.id, today, user.pushTime, 'success');
+      results.push({ userId: user.id, email: user.email, ok: true });
+    } catch (error) {
+      await recordPushLog(user.id, today, user.pushTime, 'failed', error.message);
+      results.push({ userId: user.id, email: user.email, ok: false, error: error.message });
+    }
+  }
+  return results;
 }
