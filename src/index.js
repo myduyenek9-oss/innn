@@ -1,4 +1,5 @@
-﻿import express from 'express';
+﻿import 'dotenv/config';
+import express from 'express';
 import schedule from 'node-schedule';
 import { initBazi, getDayFortune } from './bazi/engine.js';
 import { testDingtalk } from './services/dingtalk.js';

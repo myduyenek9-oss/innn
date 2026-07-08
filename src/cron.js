@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { initBazi } from './bazi/engine.js';
 import { sendDailyPush } from './services/fortune-push.js';
 
