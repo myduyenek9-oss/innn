@@ -110,7 +110,9 @@ function buildWeekContent(avgScore, todayDate) {
   weekStart.setDate(d.getDate() - dow + 1);
   const info = scoreToInfo(avgScore);
   let text = info.icon + ' **本周综合：' + avgScore + '分 · ' + info.level + '**\n\n';
-  text += '**本周各日运势：**\n';
+  text += '**本周各日运势：**\n\n';
+  text += '| 日期 | 星期 | 日柱 | 分数 | 吉凶 |\n';
+  text += '| --- | --- | --- | --- | --- |\n';
   for (let i = 0; i < 7; i++) {
     const dd = new Date(weekStart); dd.setDate(weekStart.getDate() + i);
     const dg = getSolarDayGZ(dd);
@@ -118,8 +120,8 @@ function buildWeekContent(avgScore, todayDate) {
     const scInfo = scoreToInfo(sc);
     const dayName = ['周日','周一','周二','周三','周四','周五','周六'][dd.getDay()];
     const isToday = dd.toDateString() === d.toDateString();
-    const mark = isToday ? '【今日】' : '       ';
-    text += mark + (dd.getMonth()+1) + '月' + dd.getDate() + '日 ' + dayName + (isToday ? ' ★' : '  ') + ' **' + sc + '分 ' + scInfo.level + '** ' + scInfo.icon + ' 日柱' + dg + '\n';
+    const dateText = (dd.getMonth()+1) + '月' + dd.getDate() + '日' + (isToday ? '【今日】' : '');
+    text += '| ' + dateText + ' | ' + dayName + ' | ' + dg + ' | **' + sc + '分** | ' + scInfo.icon + ' ' + scInfo.level + ' |\n';
   }
   const weekTotal = Array.from({length:7},(_,i) => { const dd = new Date(weekStart); dd.setDate(weekStart.getDate()+i); return getDayScore(getSolarDayGZ(dd), _bazi); }).reduce((a,b) => a+b, 0);
   const weekAvg = Math.round(weekTotal / 7);
@@ -153,18 +155,18 @@ function buildYearContent(avgScore, year) {
     text += '· 今年需以保守稳健为主\n';
     text += '· 重心放在自我提升和内在修炼上\n';
   }
-  text += '\n**月度吉凶速览：**\n';
-  const good = [], bad = [];
+  text += '\n**月度吉凶速览：**\n\n';
+  text += '| 月份 | 参考日柱 | 分数 | 判断 | 提醒 |\n';
+  text += '| --- | --- | --- | --- | --- |\n';
   for (let m = 1; m <= 12; m++) {
     try {
       const l = Solar.fromYmdHms(year, m, 15, 12, 0, 0).getLunar();
       const sc = getDayScore(l.getDayInGanZhi(), _bazi);
-      if (sc >= 70) good.push(m);
-      else if (sc <= 35) bad.push(m);
+      const monthInfo = scoreToInfo(sc);
+      const tip = sc >= 70 ? '适合推进' : sc >= 52 ? '稳中求进' : sc >= 36 ? '保守稳健' : '谨慎避险';
+      text += '| ' + m + '月 | ' + l.getDayInGanZhi() + ' | **' + sc + '分** | ' + monthInfo.icon + ' ' + monthInfo.level + ' | ' + tip + ' |\n';
     } catch(e) {}
   }
-  if (good.length) text += '· 较佳月份：' + good.join('、') + '月\n';
-  if (bad.length) text += '· 需谨慎月份：' + bad.join('、') + '月\n';
   return text;
 }
 

@@ -86,6 +86,21 @@
   }
   .bazi-card .gz { font-size: 16px; font-weight: 700; color: #f1c40f; letter-spacing: 3px; }
   .bazi-card .nayin { font-size: 12px; color: #95a5a6; margin-top: 4px; }
+  .bazi-card .map { font-size: 12px; color: #cbd5e1; margin-top: 6px; line-height: 1.6; }
+  .fortune-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 13px;
+  }
+  .fortune-table th, .fortune-table td {
+    border-bottom: 1px solid var(--border);
+    padding: 8px 6px;
+    text-align: left;
+    vertical-align: top;
+  }
+  .fortune-table th { color: var(--muted); font-weight: 600; }
+  .fortune-table td:last-child, .fortune-table th:last-child { text-align: right; }
   .section { display: none; }
   .section.active { display: block; }
   .nav { display: flex; gap: 8px; margin-bottom: 16px; }
@@ -268,13 +283,17 @@ async function loadConfig() {
     if (d.birthTime) document.getElementById('birthTime').value = d.birthTime;
     if (d.gender) document.getElementById('gender').value = d.gender;
     if (d.location) document.getElementById('location').value = d.location;
-    if (d.bazi) {
-      const b = d.bazi;
-      document.getElementById('baziDisplay').style.display = 'block';
-      document.getElementById('baziGZ').textContent = b.yearGZ + ' ' + b.monthGZ + ' ' + b.dayGZ + ' ' + b.timeGZ;
-      const ny = [b.yearNaYin, b.monthNaYin, b.dayNaYin, b.timeNaYin].filter(Boolean);
-      if (ny.length) document.getElementById('baziNaYin').textContent = ny.join(' | ');
-    }
+      if (d.bazi) {
+        const b = d.bazi;
+        document.getElementById('baziDisplay').style.display = 'block';
+        document.getElementById('baziGZ').textContent = b.yearGZ + ' ' + b.monthGZ + ' ' + b.dayGZ + ' ' + b.timeGZ;
+        const ny = [];
+        if (b.yearNaYin) ny.push('年柱 ' + b.yearNaYin);
+        if (b.monthNaYin) ny.push('月柱 ' + b.monthNaYin);
+        if (b.dayNaYin) ny.push('日柱 ' + b.dayNaYin);
+        if (b.timeNaYin) ny.push('时柱 ' + b.timeNaYin);
+        if (ny.length) document.getElementById('baziNaYin').textContent = ny.join(' · ');
+      }
   } catch(e) { console.error(e); }
 }
 
