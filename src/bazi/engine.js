@@ -66,6 +66,16 @@ function getSolarDayGZ(date) {
   return s.getLunar().getDayInGanZhi();
 }
 
+function getFlowMonthGZ(date) {
+  const s = Solar.fromYmdHms(date.getFullYear(), date.getMonth()+1, date.getDate(), 12, 0, 0);
+  return s.getLunar().getMonthInGanZhiExact();
+}
+
+function getFlowYearGZ(date) {
+  const s = Solar.fromYmdHms(date.getFullYear(), date.getMonth()+1, date.getDate(), 12, 0, 0);
+  return s.getLunar().getYearInGanZhiExact();
+}
+
 function toLunar(date) {
   const s = Solar.fromYmdHms(date.getFullYear(), date.getMonth()+1, date.getDate(), 12, 0, 0);
   const l = s.getLunar();
@@ -129,49 +139,48 @@ function buildWeekContent(avgScore, todayDate) {
   return text;
 }
 
-function buildMonthContent(avgScore, year, month) {
-  const info = scoreToInfo(avgScore);
+function buildMonthContent(score, year, month, flowMonthGZ) {
+  const info = scoreToInfo(score);
   const monthNames = ['','正月','二月','三月','四月','五月','六月','七月','八月','九月','十月','冬月','腊月'];
-  let text = info.icon + ' **' + year + '年' + monthNames[month] + '：' + avgScore + '分 · ' + info.level + '**\n\n';
+  let text = info.icon + ' **' + year + '年' + monthNames[month] + '：' + score + '分 · ' + info.level + '**\n\n';
+  text += '**本月依据：** 当前流月 **' + flowMonthGZ + '**\n\n';
   text += '**月令总论：**\n';
-  text += avgScore >= 70 ? '· 本月是运势旺盛之月，宜制定大计划、敢于作为\n' :
-          avgScore >= 52 ? '· 本月整体顺遂，宜稳扎稳打、步步为营\n' :
+  text += score >= 70 ? '· 本月是运势旺盛之月，宜制定大计划、敢于作为\n' :
+          score >= 52 ? '· 本月整体顺遂，宜稳扎稳打、步步为营\n' :
                           '· 本月需以保守稳健为主，重心放在自我提升上\n';
-  text += '\n**本月注意：** ' + (avgScore < 50 ? '避免争吵、风险投资、低调行事' : '合理作息、防微杜渐、把握机遇') + '\n';
+  text += '\n**本月注意：** ' + (score < 50 ? '避免争吵、风险投资、低调行事' : '合理作息、防微杜渐、把握机遇') + '\n';
   return text;
 }
 
-function buildYearContent(avgScore, year, date = new Date()) {
-  const info = scoreToInfo(avgScore);
-  let text = info.icon + ' **' + year + '年综合：' + avgScore + '分 · ' + info.level + '**\n\n';
+function buildYearContent(score, year, flowYearGZ, date = new Date()) {
+  const info = scoreToInfo(score);
+  let text = info.icon + ' **' + year + '年综合：' + score + '分 · ' + info.level + '**\n\n';
+  text += '**本年依据：** 当前流年 **' + flowYearGZ + '**\n\n';
   text += '**年度总论：**\n';
-  if (avgScore >= 70) {
+  if (score >= 70) {
     text += '· 今年是运势旺盛之年，宜制定大计划、敢于作为\n';
     text += '· 事业与财运有较大提升机会\n';
-  } else if (avgScore >= 52) {
+  } else if (score >= 52) {
     text += '· 今年整体顺遂，宜稳扎稳打、步步为营\n';
     text += '· 适合巩固基础、积累资源\n';
   } else {
     text += '· 今年需以保守稳健为主\n';
     text += '· 重心放在自我提升和内在修炼上\n';
   }
-  text += '\n**流月速览（未来三个月）：**\n\n';
+  text += '\n**全年流月速览：**\n\n';
   text += '| 月份 | 流月 | 分数 | 判断 | 提醒 |\n';
   text += '| --- | --- | --- | --- | --- |\n';
-  const startMonth = date.getMonth() + 1;
-  for (let i = 0; i < 3; i++) {
+  for (let m = 1; m <= 12; m++) {
     try {
-      const m = ((startMonth - 1 + i) % 12) + 1;
-      const displayYear = year + Math.floor((startMonth - 1 + i) / 12);
-      const l = Solar.fromYmdHms(displayYear, m, 15, 12, 0, 0).getLunar();
-      const flowMonth = l.getMonthInGanZhi();
+      const l = Solar.fromYmdHms(year, m, 15, 12, 0, 0).getLunar();
+      const flowMonth = l.getMonthInGanZhiExact();
       const sc = getDayScore(flowMonth, _bazi);
       const monthInfo = scoreToInfo(sc);
       const tip = sc >= 70 ? '适合推进' : sc >= 52 ? '稳中求进' : sc >= 36 ? '保守稳健' : '谨慎避险';
-      text += '| ' + displayYear + '年' + m + '月 | ' + flowMonth + ' | **' + sc + '分** | ' + monthInfo.icon + ' ' + monthInfo.level + ' | ' + tip + ' |\n';
+      text += '| ' + m + '月 | ' + flowMonth + ' | **' + sc + '分** | ' + monthInfo.icon + ' ' + monthInfo.level + ' | ' + tip + ' |\n';
     } catch(e) {}
   }
-  text += '\n完整 12 个月流月表建议在网页查看，钉钉消息默认保留精简版，避免过长。\n';
+  text += '\n说明：本表按每个月的流月干支计算，和今日/本周流日分数不是同一层级。\n';
   return text;
 }
 
@@ -240,24 +249,15 @@ export function getWeekFortune(date) {
 export function getMonthFortune(date) {
   const d = date || new Date();
   const year = d.getFullYear(), month = d.getMonth() + 1;
-  const days = new Date(year, month, 0).getDate();
-  let total = 0;
-  for (let day = 1; day <= days; day += 3) {
-    const l = Solar.fromYmdHms(year, month, day, 12, 0, 0).getLunar();
-    total += getDayScore(l.getDayInGanZhi(), _bazi);
-  }
-  const avg = Math.round(total / Math.ceil(days / 3));
-  return { score: avg, content: buildMonthContent(avg, year, month) };
+  const flowMonthGZ = getFlowMonthGZ(d);
+  const score = getDayScore(flowMonthGZ, _bazi);
+  return { score, content: buildMonthContent(score, year, month, flowMonthGZ) };
 }
 
 export function getYearFortune(date) {
   const d = date || new Date();
   const year = d.getFullYear();
-  let total = 0;
-  for (let m = 1; m <= 12; m++) {
-    const l = Solar.fromYmdHms(year, m, 15, 12, 0, 0).getLunar();
-    total += getDayScore(l.getDayInGanZhi(), _bazi);
-  }
-  const avg = Math.round(total / 12);
-  return { score: avg, content: buildYearContent(avg, year, d) };
+  const flowYearGZ = getFlowYearGZ(d);
+  const score = getDayScore(flowYearGZ, _bazi);
+  return { score, content: buildYearContent(score, year, flowYearGZ, d) };
 }
