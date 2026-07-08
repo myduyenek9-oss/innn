@@ -120,7 +120,7 @@ function buildWeekContent(avgScore, todayDate) {
     const scInfo = scoreToInfo(sc);
     const dayName = ['周日','周一','周二','周三','周四','周五','周六'][dd.getDay()];
     const isToday = dd.toDateString() === d.toDateString();
-    const dateText = (dd.getMonth()+1) + '月' + dd.getDate() + '日' + (isToday ? '【今日】' : '');
+    const dateText = (isToday ? '🔴 ' : '') + (dd.getMonth()+1) + '月' + dd.getDate() + '日';
     text += '| ' + dateText + ' | ' + dayName + ' | ' + dg + ' | **' + sc + '分** | ' + scInfo.icon + ' ' + scInfo.level + ' |\n';
   }
   const weekTotal = Array.from({length:7},(_,i) => { const dd = new Date(weekStart); dd.setDate(weekStart.getDate()+i); return getDayScore(getSolarDayGZ(dd), _bazi); }).reduce((a,b) => a+b, 0);
@@ -141,7 +141,7 @@ function buildMonthContent(avgScore, year, month) {
   return text;
 }
 
-function buildYearContent(avgScore, year) {
+function buildYearContent(avgScore, year, date = new Date()) {
   const info = scoreToInfo(avgScore);
   let text = info.icon + ' **' + year + '年综合：' + avgScore + '分 · ' + info.level + '**\n\n';
   text += '**年度总论：**\n';
@@ -155,18 +155,23 @@ function buildYearContent(avgScore, year) {
     text += '· 今年需以保守稳健为主\n';
     text += '· 重心放在自我提升和内在修炼上\n';
   }
-  text += '\n**月度吉凶速览：**\n\n';
-  text += '| 月份 | 参考日柱 | 分数 | 判断 | 提醒 |\n';
+  text += '\n**流月速览（未来三个月）：**\n\n';
+  text += '| 月份 | 流月 | 分数 | 判断 | 提醒 |\n';
   text += '| --- | --- | --- | --- | --- |\n';
-  for (let m = 1; m <= 12; m++) {
+  const startMonth = date.getMonth() + 1;
+  for (let i = 0; i < 3; i++) {
     try {
-      const l = Solar.fromYmdHms(year, m, 15, 12, 0, 0).getLunar();
-      const sc = getDayScore(l.getDayInGanZhi(), _bazi);
+      const m = ((startMonth - 1 + i) % 12) + 1;
+      const displayYear = year + Math.floor((startMonth - 1 + i) / 12);
+      const l = Solar.fromYmdHms(displayYear, m, 15, 12, 0, 0).getLunar();
+      const flowMonth = l.getMonthInGanZhi();
+      const sc = getDayScore(flowMonth, _bazi);
       const monthInfo = scoreToInfo(sc);
       const tip = sc >= 70 ? '适合推进' : sc >= 52 ? '稳中求进' : sc >= 36 ? '保守稳健' : '谨慎避险';
-      text += '| ' + m + '月 | ' + l.getDayInGanZhi() + ' | **' + sc + '分** | ' + monthInfo.icon + ' ' + monthInfo.level + ' | ' + tip + ' |\n';
+      text += '| ' + displayYear + '年' + m + '月 | ' + flowMonth + ' | **' + sc + '分** | ' + monthInfo.icon + ' ' + monthInfo.level + ' | ' + tip + ' |\n';
     } catch(e) {}
   }
+  text += '\n完整 12 个月流月表建议在网页查看，钉钉消息默认保留精简版，避免过长。\n';
   return text;
 }
 
@@ -254,5 +259,5 @@ export function getYearFortune(date) {
     total += getDayScore(l.getDayInGanZhi(), _bazi);
   }
   const avg = Math.round(total / 12);
-  return { score: avg, content: buildYearContent(avg, year) };
+  return { score: avg, content: buildYearContent(avg, year, d) };
 }

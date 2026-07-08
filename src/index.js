@@ -22,6 +22,7 @@ app.get('/health', (req, res) => res.json({ ok: true, time: new Date().toISOStri
 
 app.get('/api/config', (req, res) => {
   const c = loadConfig();
+  c.webhookConfigured = Boolean(c.webhook);
   if (c.webhook) c.webhook = c.webhook.replace(/\?access_token=[\w]+/, '?access_token=***');
   try {
     const day = getDayFortune(new Date());
@@ -39,8 +40,10 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, '..', 'views', 'ind
 
 app.post('/api/config', (req, res) => {
   const { webhook, pushTime, userName, birthDate, birthTime, gender, location } = req.body;
-  if (!webhook) return res.status(400).json({ ok: false, msg: 'webhook required' });
-  saveConfig({ webhook, pushTime, userName, birthDate, birthTime, gender, location });
+  const current = loadConfig();
+  const nextWebhook = webhook && !webhook.includes('***') ? webhook : current.webhook;
+  if (!nextWebhook) return res.status(400).json({ ok: false, msg: 'webhook required' });
+  saveConfig({ webhook: nextWebhook, pushTime, userName, birthDate, birthTime, gender, location });
   initBazi();
   if (ENABLE_WEB_SCHEDULE) schedulePush();
   res.json({ ok: true });

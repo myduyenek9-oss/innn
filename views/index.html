@@ -84,9 +84,36 @@
     margin-top: 12px;
     font-size: 14px;
   }
-  .bazi-card .gz { font-size: 16px; font-weight: 700; color: #f1c40f; letter-spacing: 3px; }
-  .bazi-card .nayin { font-size: 12px; color: #95a5a6; margin-top: 4px; }
-  .bazi-card .map { font-size: 12px; color: #cbd5e1; margin-top: 6px; line-height: 1.6; }
+  .pillar-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .pillar {
+    text-align: center;
+    min-width: 0;
+  }
+  .pillar .label {
+    display: block;
+    font-size: 11px;
+    color: #95a5a6;
+    margin-bottom: 4px;
+  }
+  .pillar .gz {
+    display: block;
+    font-size: 16px;
+    font-weight: 700;
+    color: #f1c40f;
+    letter-spacing: 1px;
+  }
+  .pillar .nayin {
+    display: block;
+    font-size: 12px;
+    color: #cbd5e1;
+    margin-top: 4px;
+    white-space: nowrap;
+  }
+  .bazi-card .map { font-size: 12px; color: #95a5a6; margin-top: 10px; line-height: 1.6; }
   .fortune-table {
     width: 100%;
     border-collapse: collapse;
@@ -158,8 +185,8 @@
       </div>
       <div id="baziDisplay" class="bazi-card" style="display:none">
         <div style="font-size:12px;color:#95a5a6;margin-bottom:8px">您的八字</div>
-        <div class="gz" id="baziGZ"></div>
-        <div class="nayin" id="baziNaYin"></div>
+        <div class="pillar-grid" id="baziPillars"></div>
+        <div class="map">上为四柱，下为对应纳音：年柱、月柱、日柱、时柱一一对应。</div>
       </div>
     </div>
 
@@ -276,7 +303,13 @@ async function loadConfig() {
   try {
     const r = await fetch('/api/config');
     const d = await r.json();
-    if (d.webhook) document.getElementById('webhook').value = d.webhook;
+    const webhookInput = document.getElementById('webhook');
+    if (d.webhook && !d.webhook.includes('***')) {
+      webhookInput.value = d.webhook;
+    } else if (d.webhookConfigured) {
+      webhookInput.value = '';
+      webhookInput.placeholder = '已通过 Railway 环境变量配置，如需修改请粘贴完整 Webhook';
+    }
     if (d.pushTime) document.getElementById('pushTime').value = d.pushTime;
     if (d.userName) document.getElementById('userName').value = d.userName;
     if (d.birthDate) document.getElementById('birthDate').value = d.birthDate;
@@ -284,16 +317,18 @@ async function loadConfig() {
     if (d.gender) document.getElementById('gender').value = d.gender;
     if (d.location) document.getElementById('location').value = d.location;
       if (d.bazi) {
-        const b = d.bazi;
-        document.getElementById('baziDisplay').style.display = 'block';
-        document.getElementById('baziGZ').textContent = b.yearGZ + ' ' + b.monthGZ + ' ' + b.dayGZ + ' ' + b.timeGZ;
-        const ny = [];
-        if (b.yearNaYin) ny.push('年柱 ' + b.yearNaYin);
-        if (b.monthNaYin) ny.push('月柱 ' + b.monthNaYin);
-        if (b.dayNaYin) ny.push('日柱 ' + b.dayNaYin);
-        if (b.timeNaYin) ny.push('时柱 ' + b.timeNaYin);
-        if (ny.length) document.getElementById('baziNaYin').textContent = ny.join(' · ');
-      }
+      const b = d.bazi;
+      document.getElementById('baziDisplay').style.display = 'block';
+      const pillars = [
+        ['年柱', b.yearGZ, b.yearNaYin],
+        ['月柱', b.monthGZ, b.monthNaYin],
+        ['日柱', b.dayGZ, b.dayNaYin],
+        ['时柱', b.timeGZ, b.timeNaYin]
+      ];
+      document.getElementById('baziPillars').innerHTML = pillars.map(([label, gz, nayin]) =>
+        '<div class="pillar"><span class="label">' + label + '</span><span class="gz">' + (gz || '-') + '</span><span class="nayin">' + (nayin || '-') + '</span></div>'
+      ).join('');
+    }
   } catch(e) { console.error(e); }
 }
 
