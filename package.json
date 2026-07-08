@@ -13,6 +13,7 @@
     "ejs": "^3.1.9",
     "express": "^4.22.2",
     "lunar-javascript": "^1.7.7",
-    "node-schedule": "^2.1.1"
+    "node-schedule": "^2.1.1",
+    "pg": "^8.13.1"
   }
 }

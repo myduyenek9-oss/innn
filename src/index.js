@@ -4,6 +4,7 @@ import { initBazi, getDayFortune } from './bazi/engine.js';
 import { testDingtalk } from './services/dingtalk.js';
 import { loadConfig, saveConfig } from './services/config.js';
 import { sendDailyPush } from './services/fortune-push.js';
+import { chatWithAgent, clearAgentHistory, getAgentHistory, getAgentStatus } from './services/agent.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -12,6 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const IS_RAILWAY = Boolean(process.env.RAILWAY_ENVIRONMENT_ID || process.env.RAILWAY_PROJECT_ID);
 const ENABLE_WEB_SCHEDULE = process.env.ENABLE_WEB_SCHEDULE === 'true' || !IS_RAILWAY;
+const agentHits = new Map();
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
@@ -54,6 +56,55 @@ app.post('/api/push', (req, res) => {
     console.error('Push error:', e.message);
     res.status(500).json({ ok: false, msg: e.message });
   });
+});
+
+function checkAgentRateLimit(req) {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const windowMs = 10 * 60 * 1000;
+  const limit = Number(process.env.AGENT_RATE_LIMIT || 20);
+  const bucket = (agentHits.get(ip) || []).filter(ts => now - ts < windowMs);
+  if (bucket.length >= limit) return false;
+  bucket.push(now);
+  agentHits.set(ip, bucket);
+  return true;
+}
+
+app.get('/api/agent/status', (req, res) => {
+  res.json({ ok: true, ...getAgentStatus() });
+});
+
+app.get('/api/agent/history', async (req, res) => {
+  try {
+    const data = await getAgentHistory();
+    res.json({ ok: true, ...data });
+  } catch(e) {
+    console.error('Agent history error:', e.message);
+    res.status(500).json({ ok: false, msg: e.message });
+  }
+});
+
+app.post('/api/agent/chat', async (req, res) => {
+  if (!checkAgentRateLimit(req)) {
+    return res.status(429).json({ ok: false, msg: '提问太频繁，请稍后再试' });
+  }
+  try {
+    const result = await chatWithAgent(req.body?.question);
+    res.json({ ok: true, ...result });
+  } catch(e) {
+    console.error('Agent chat error:', e.message);
+    res.status(500).json({ ok: false, msg: e.message, status: getAgentStatus() });
+  }
+});
+
+app.delete('/api/agent/history', async (req, res) => {
+  try {
+    await clearAgentHistory();
+    res.json({ ok: true });
+  } catch(e) {
+    console.error('Agent clear error:', e.message);
+    res.status(500).json({ ok: false, msg: e.message });
+  }
 });
 
 let _job = null;
