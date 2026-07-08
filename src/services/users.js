@@ -8,6 +8,7 @@ import { getTrueSolarTimeInfo } from '../bazi/engine.js';
 
 const TOKEN_HOURS = 24;
 const CODE_MINUTES = 10;
+const CODE_COOLDOWN_SECONDS = 60;
 
 function cleanEmail(email) {
   return String(email || '').trim().toLowerCase();
@@ -52,6 +53,7 @@ async function createVerificationToken(userId) {
 }
 
 async function createVerificationCode(userId) {
+  await assertCodeCooldown('email_verification_tokens', userId);
   const code = String(randomInt(0, 1000000)).padStart(6, '0');
   await query('DELETE FROM email_verification_tokens WHERE user_id = $1', [userId]);
   await query(
@@ -63,6 +65,7 @@ async function createVerificationCode(userId) {
 }
 
 async function createPasswordResetCode(userId) {
+  await assertCodeCooldown('password_reset_tokens', userId);
   const code = String(randomInt(0, 1000000)).padStart(6, '0');
   await query('DELETE FROM password_reset_tokens WHERE user_id = $1', [userId]);
   await query(
@@ -71,6 +74,21 @@ async function createPasswordResetCode(userId) {
     [userId, hashValue(`${userId}:${code}`), CODE_MINUTES]
   );
   return code;
+}
+
+async function assertCodeCooldown(tableName, userId) {
+  const result = await query(
+    `SELECT EXTRACT(EPOCH FROM (NOW() - created_at))::int AS seconds
+     FROM ${tableName}
+     WHERE user_id = $1
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [userId]
+  );
+  const seconds = result.rows[0]?.seconds;
+  if (Number.isFinite(seconds) && seconds < CODE_COOLDOWN_SECONDS) {
+    throw new Error(`验证码发送太频繁，请 ${CODE_COOLDOWN_SECONDS - seconds} 秒后再试`);
+  }
 }
 
 export async function registerUser({ email, password, displayName }) {
@@ -124,7 +142,12 @@ export async function registerUser({ email, password, displayName }) {
 
 async function sendCodeForUser(userId, email) {
   const code = await createVerificationCode(userId);
-  return sendVerificationCode(email, code);
+  try {
+    return await sendVerificationCode(email, code);
+  } catch (error) {
+    await query('DELETE FROM email_verification_tokens WHERE user_id = $1', [userId]);
+    throw error;
+  }
 }
 
 export async function verifyEmailToken(token) {
@@ -189,7 +212,13 @@ export async function requestPasswordReset(email) {
     return { mailSent: false, devCode: null, skipped: true };
   }
   const code = await createPasswordResetCode(user.id);
-  const mail = await sendPasswordResetCode(normalizedEmail, code);
+  let mail;
+  try {
+    mail = await sendPasswordResetCode(normalizedEmail, code);
+  } catch (error) {
+    await query('DELETE FROM password_reset_tokens WHERE user_id = $1', [user.id]);
+    throw error;
+  }
   return { mailSent: mail.sent, devCode: mail.devCode || null };
 }
 

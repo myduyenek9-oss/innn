@@ -30,8 +30,12 @@ function createTransporter() {
 
 function normalizeMailError(error) {
   const raw = error?.message || String(error || '');
+  const lower = raw.toLowerCase();
   if (raw.includes('535') || raw.toLowerCase().includes('login fail')) {
     return new Error('QQ 邮箱 SMTP 登录失败：请确认已开启 POP3/SMTP 或 IMAP/SMTP；确认 SMTP_USER 与授权码属于同一个 QQ 邮箱；重新生成授权码后替换 SMTP_PASS；不要使用 QQ 登录密码。原始错误：' + raw);
+  }
+  if (raw.includes('421') || raw.includes('450') || raw.includes('451') || lower.includes('frequency') || lower.includes('busy') || lower.includes('rate')) {
+    return new Error('QQ 邮箱发送太频繁或服务繁忙，请等待 1-5 分钟后再试。为了避免触发限制，请不要连续点击发送验证码。原始错误：' + raw);
   }
   return error;
 }

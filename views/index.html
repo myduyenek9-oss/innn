@@ -238,7 +238,7 @@
         <label>密码</label>
         <input type="password" id="registerPassword" placeholder="至少 8 位">
       </div>
-      <button onclick="register()">注册并发送验证码</button>
+      <button id="registerSendBtn" onclick="register()">注册并发送验证码</button>
       <div class="row" style="margin-top:16px">
         <div class="form-group">
           <label>邮箱验证码</label>
@@ -259,7 +259,7 @@
         <label>邮箱</label>
         <input type="email" id="resetEmail" placeholder="name@example.com">
       </div>
-      <button onclick="requestPasswordReset()">发送找回验证码</button>
+      <button id="resetSendBtn" onclick="requestPasswordReset()">发送找回验证码</button>
       <div class="row" style="margin-top:16px">
         <div class="form-group">
           <label>验证码</label>
@@ -585,6 +585,24 @@ function showStatus(id, type, msg) {
   el.style.display = msg ? 'block' : 'none';
 }
 
+function startButtonCooldown(buttonId, seconds, normalText) {
+  const btn = document.getElementById(buttonId);
+  if (!btn) return;
+  let left = seconds;
+  btn.disabled = true;
+  btn.textContent = `${normalText}（${left}s）`;
+  const timer = setInterval(() => {
+    left -= 1;
+    if (left <= 0) {
+      clearInterval(timer);
+      btn.disabled = false;
+      btn.textContent = normalText;
+      return;
+    }
+    btn.textContent = `${normalText}（${left}s）`;
+  }, 1000);
+}
+
 function escapeHtml(str) {
   return String(str || '').replace(/[&<>"']/g, ch => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -723,6 +741,7 @@ async function register() {
     resetAgentPanel();
     const extra = d.devCode ? `\n本地验证码：${d.devCode}` : '';
     showStatus('registerStatus', 'ok', d.msg + extra);
+    startButtonCooldown('registerSendBtn', 60, '注册并发送验证码');
   } catch(e) {
     showStatus('registerStatus', 'err', e.message);
   }
@@ -754,6 +773,7 @@ async function requestPasswordReset() {
     document.getElementById('resetCode').value = d.devCode || '';
     const extra = d.devCode ? `\n本地验证码：${d.devCode}` : '';
     showStatus('resetStatus', 'ok', d.msg + extra);
+    startButtonCooldown('resetSendBtn', 60, '发送找回验证码');
   } catch(e) {
     showStatus('resetStatus', 'err', e.message);
   }
