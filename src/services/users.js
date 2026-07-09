@@ -344,20 +344,36 @@ export async function getPushSettings(userId, { includeSecret = false } = {}) {
     [userId]
   );
   const row = result.rows[0] || {};
-  const webhook = row.encryptedWebhook ? decryptSecret(row.encryptedWebhook) : '';
+  let webhook = '';
+  let webhookError = '';
+  if (row.encryptedWebhook) {
+    try {
+      webhook = decryptSecret(row.encryptedWebhook);
+    } catch (error) {
+      webhookError = '已保存的钉钉 Webhook 无法解密，请重新粘贴保存，或删除后重新配置。';
+    }
+  }
   return {
     pushTime: row.pushTime || '06:30',
     enabled: Boolean(row.enabled),
-    webhookConfigured: Boolean(webhook),
+    webhookConfigured: Boolean(row.encryptedWebhook),
+    webhookError,
     webhook: includeSecret ? webhook : maskWebhook(webhook)
   };
 }
 
 export async function savePushSettings(userId, settings) {
-  const current = await getPushSettings(userId, { includeSecret: true });
-  const webhook = settings.webhook && !settings.webhook.includes('***')
+  const incomingWebhook = settings.webhook && !settings.webhook.includes('***')
     ? String(settings.webhook).trim()
-    : current.webhook;
+    : '';
+  let webhook = incomingWebhook;
+  if (!webhook) {
+    const current = await getPushSettings(userId, { includeSecret: true });
+    webhook = current.webhook;
+    if (current.webhookConfigured && current.webhookError) {
+      throw new Error(current.webhookError);
+    }
+  }
   const encryptedWebhook = webhook ? encryptSecret(webhook) : null;
   const enabled = Boolean(settings.enabled) && Boolean(webhook);
 

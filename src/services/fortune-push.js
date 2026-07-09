@@ -33,6 +33,7 @@ export async function sendDailyPushForUser(userId, date = new Date()) {
   const profile = await getProfile(userId);
   if (!profile.birthDate || !profile.birthTime) throw new Error('出生资料未完整配置');
   const push = await getPushSettings(userId, { includeSecret: true });
+  if (push.webhookError) throw new Error(push.webhookError);
   if (!push.enabled || !push.webhook) throw new Error('钉钉推送未启用');
   const message = buildDailyPushMessage(profile, date);
   await pushToDingtalk(message, push.webhook);

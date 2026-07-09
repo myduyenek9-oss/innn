@@ -175,6 +175,7 @@ app.delete('/api/push-settings/webhook', requireAuth, async (req, res) => {
 app.post('/api/test-dingtalk', requireAuth, async (req, res) => {
   try {
     const push = await getPushSettings(req.user.id, { includeSecret: true });
+    if (push.webhookError) throw new Error(push.webhookError);
     await testDingtalk(push.webhook);
     res.json({ ok: true, msg: '钉钉连接成功' });
   } catch(e) {

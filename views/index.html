@@ -902,6 +902,9 @@ async function loadPushSettings() {
   const webhookInput = document.getElementById('webhook');
   webhookInput.value = '';
   webhookInput.placeholder = pushWebhookConfigured ? '已加密保存，如需修改请粘贴完整 Webhook' : 'https://oapi.dingtalk.com/robot/send?access_token=...';
+  if (s.webhookError) {
+    showStatus('pushStatus', 'err', s.webhookError);
+  }
 }
 
 async function savePushSettings() {
