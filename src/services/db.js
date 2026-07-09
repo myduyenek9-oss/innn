@@ -14,6 +14,7 @@ export function getPool() {
     const sslMode = process.env.PGSSLMODE || '';
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
+      connectionTimeoutMillis: Number(process.env.PG_CONNECTION_TIMEOUT_MS || 3000),
       ssl: sslMode === 'require' ? { rejectUnauthorized: false } : undefined
     });
   }

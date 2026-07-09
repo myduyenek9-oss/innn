@@ -363,8 +363,16 @@ function schedulePushLoop() {
 }
 
 async function start() {
-  await ensureSchema();
-  await seedAdminUser();
+  try {
+    const ready = await ensureSchema();
+    if (ready) {
+      await seedAdminUser();
+    } else {
+      console.warn('未配置 DATABASE_URL，已跳过数据库初始化与管理员种子。');
+    }
+  } catch (err) {
+    console.warn('数据库初始化失败，当前将以降级模式启动：', err.message);
+  }
   const server = app.listen(PORT, '0.0.0.0', () => {
     console.log('运势推送服务已启动 http://0.0.0.0:' + PORT);
     if (ENABLE_WEB_SCHEDULE) {

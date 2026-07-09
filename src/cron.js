@@ -4,8 +4,17 @@ import { seedAdminUser } from './services/users.js';
 import { processDuePushes } from './services/fortune-push.js';
 
 async function main() {
-  await ensureSchema();
-  await seedAdminUser();
+  try {
+    const ready = await ensureSchema();
+    if (ready) {
+      await seedAdminUser();
+    } else {
+      console.warn('未配置 DATABASE_URL，已跳过数据库初始化与管理员种子。');
+    }
+  } catch (err) {
+    console.warn('数据库初始化失败，Cron 将跳过数据库相关任务：', err.message);
+    return;
+  }
   const results = await processDuePushes(new Date());
   console.log('Cron checked users:', results.length);
   for (const result of results) {
