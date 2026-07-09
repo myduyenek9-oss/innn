@@ -24,7 +24,12 @@ function createTransporter() {
     auth: process.env.SMTP_USER ? {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS || ''
-    } : undefined
+    } : undefined,
+    connectionTimeout: 30000,
+    socketTimeout: 30000,
+    tls: {
+      rejectUnauthorized: false
+    }
   });
 }
 
@@ -122,3 +127,4 @@ export async function sendVerificationEmail(email, verificationUrl) {
 
   return { sent: true };
 }
+
